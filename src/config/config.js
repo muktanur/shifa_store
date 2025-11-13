@@ -23,7 +23,7 @@ export const authenticate =async(email,password)=>{
     //  UNCOMMENT THIS WHEN CREATING ADMIN  FIRST TIME
 
     if(email && password){
-        if(email=='shifenterprisesambari@gmail.com' && password==="Shifa@2025"){
+        if(email=='shifaenterprisesambari@gmail.com' && password==="Shifa@2025"){
             return Promise.resolve({ email: email, password: password }); 
         }else{
             return null
