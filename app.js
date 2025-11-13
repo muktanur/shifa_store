@@ -64,14 +64,14 @@ const start = async () => {
 
   const app = fastify();
 
-  // Register your routes
+  // Register Routes
   await registerRoutes(app);
 
   // AdminJS
   await buildAdminRouter(app);
 
-  // Start Fastify server first
-  const server = await app.listen({
+  // Start Fastify server (returns URL string)
+  await app.listen({
     port: PORT,
     host: "0.0.0.0",
   });
@@ -80,7 +80,7 @@ const start = async () => {
     `Shifa Store running on http://localhost:${PORT}${admin.options.rootPath}`
   );
 
-  // --- 🔥 Create Socket.IO server attached to Fastify's HTTP server ---
+  // ---- IMPORTANT: Fastify v5 gives server in app.server ----
   const io = new SocketServer(app.server, {
     cors: {
       origin: "*",
@@ -90,11 +90,11 @@ const start = async () => {
     transports: ["websocket"],
   });
 
-  // --- 🔥 Socket.IO Events ---
+  // Socket events
   io.on("connection", (socket) => {
     console.log("A user Connected ✅");
 
-    socket.on("jionRoom", (orderId) => {
+    socket.on("joinRoom", (orderId) => {
       socket.join(orderId);
       console.log(`🔴 User Joined room ${orderId}`);
     });
