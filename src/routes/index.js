@@ -16,13 +16,8 @@ import { orderRoutes } from "./order.js";
 import { categoryRoutes, productRoutes } from "./products.js";
 
 export const registerRoutes = async (fastify) => {
-  // User & Auth
-  fastify.register(authRoutes);
-
-  // Product & Category
-  fastify.register(productRoutes);
-  fastify.register(categoryRoutes);
-
-  // Orders
-  fastify.register(orderRoutes);
+  fastify.register(authRoutes,      { prefix: "/api" });
+  fastify.register(productRoutes,   { prefix: "/api" });
+  fastify.register(categoryRoutes,  { prefix: "/api" });
+  fastify.register(orderRoutes,     { prefix: "/api" });
 };

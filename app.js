@@ -64,46 +64,42 @@ const start = async () => {
 
   const app = fastify({ logger: true });
 
-  // 1️⃣ Register Admin FIRST
+  // AdminJS first (mounted at /admin)
   await buildAdminRouter(app);
 
-  // 2️⃣ Register App Routes AFTER
+  // API routes AFTER AdminJS
   await registerRoutes(app);
 
-  // 3️⃣ Debug – show all routes
+  // Debug routes on Render
   console.log(app.printRoutes());
 
-  // Start Fastify
   await app.listen({
     port: PORT,
     host: "0.0.0.0",
   });
 
-  console.log(
-    `Shifa Store running on http://localhost:${PORT}${admin.options.rootPath}`
-  );
+  console.log(`Shifa Store running at /admin`);
 
-  // ---- IMPORTANT: Fastify v5 gives server in app.server ----
+  // SOCKET IO
   const io = new SocketServer(app.server, {
     cors: { origin: "*" },
-    pingInterval: 10000,
-    pingTimeout: 5000,
     transports: ["websocket"],
   });
 
   io.on("connection", (socket) => {
-    console.log("A user Connected ✅");
+    console.log("Socket Connected");
 
     socket.on("joinRoom", (orderId) => {
       socket.join(orderId);
-      console.log(`🔴 User Joined room ${orderId}`);
+      console.log("Joined Room:", orderId);
     });
 
     socket.on("disconnect", () => {
-      console.log("User Disconnected ❌");
+      console.log("Socket Disconnected");
     });
   });
 };
 
 start();
+
 
