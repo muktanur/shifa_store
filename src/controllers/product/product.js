@@ -15,7 +15,7 @@
 // };
 
 
-import Product from "../../models/Product.js";
+import Product from "../../models/products.js";
 
 export const getAllProducts = async (req, reply) => {
   try {
