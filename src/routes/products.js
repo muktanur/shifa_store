@@ -11,7 +11,6 @@
 
 import { getAllCategories } from "../controllers/product/category.js";
 import {
-  getAllProducts,
   getProductsByCategoryId,
 } from "../controllers/product/product.js";
 
