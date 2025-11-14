@@ -62,15 +62,18 @@ import { Server as SocketServer } from "socket.io";
 const start = async () => {
   await connectDB(process.env.MONGO_URI);
 
-  const app = fastify();
+  const app = fastify({ logger: true });
 
-  // Register Routes
-  await registerRoutes(app);
-
-  // AdminJS
+  // 1️⃣ Register Admin FIRST
   await buildAdminRouter(app);
 
-  // Start Fastify server (returns URL string)
+  // 2️⃣ Register App Routes AFTER
+  await registerRoutes(app);
+
+  // 3️⃣ Debug – show all routes
+  console.log(app.printRoutes());
+
+  // Start Fastify
   await app.listen({
     port: PORT,
     host: "0.0.0.0",
@@ -82,15 +85,12 @@ const start = async () => {
 
   // ---- IMPORTANT: Fastify v5 gives server in app.server ----
   const io = new SocketServer(app.server, {
-    cors: {
-      origin: "*",
-    },
+    cors: { origin: "*" },
     pingInterval: 10000,
     pingTimeout: 5000,
     transports: ["websocket"],
   });
 
-  // Socket events
   io.on("connection", (socket) => {
     console.log("A user Connected ✅");
 
@@ -106,3 +106,4 @@ const start = async () => {
 };
 
 start();
+
