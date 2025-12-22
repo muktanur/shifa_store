@@ -3,6 +3,20 @@ import Branch from "../../models/branch.js";
 import Shop from "../../models/shop.js";
 import { Customer, DeliveryPartner, ShopOwner } from "../../models/user.js";
 import Product from "../../models/products.js";
+import { emitToRoom } from "../../utils/wsRooms.js";
+
+export const orderRoutes = async (app) => {
+  app.post('/update', async (req, reply) => {
+    const { orderId, status } = req.body
+
+    emitToRoom(orderId, {
+      event: 'orderUpdate',
+      status,
+    })
+
+    return reply.send({ success: true })
+  })
+}
 
 export const createOrder = async (req, reply) => {
   try {
