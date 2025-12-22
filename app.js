@@ -51,61 +51,56 @@
 
 // start();
 
+import Fastify from "fastify";
+import { Server } from "socket.io";
 
-import 'dotenv/config'
-import Fastify from 'fastify'
-import websocket from '@fastify/websocket'
+const app = Fastify({ logger: true });
 
-import { connectDB } from './src/config/connect.js'
-import { PORT } from './src/config/config.js'
-import { registerRoutes } from './src/routes/index.js'
-import { admin, buildAdminRouter } from './src/config/setup.js'
-import { joinRoom, leaveAllRooms } from './src/utils/wsRooms.js'
+// ---------- HTTP ROUTES ----------
+app.get("/", async () => {
+  return { status: "Fastify 5 + Socket.IO running 🚀" };
+});
 
+// ---------- START SERVER ----------
 const start = async () => {
-  await connectDB(process.env.MONGO_URI)
+  try {
+    // Start Fastify server
+    await app.listen({ port: 3000, host: "0.0.0.0" });
 
-  const app = Fastify({ logger: true })
+    // Attach Socket.IO directly to Fastify HTTP server
+    const io = new Server(app.server, {
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+      },
+    });
 
-  // WebSocket plugin
-  await app.register(websocket)
+    console.log("Socket.IO attached successfully ✅");
 
-  // HTTP routes
-  await registerRoutes(app)
+    // ---------- SOCKET.IO EVENTS ----------
+    io.on("connection", (socket) => {
+      console.log("User connected ✅", socket.id);
 
-  // AdminJS
-  await buildAdminRouter(app)
+      socket.on("joinRoom", (orderId) => {
+        socket.join(orderId);
+        console.log(`🔴 User joined room ${orderId}`);
+      });
 
-  // WebSocket endpoint
-  app.get('/ws', { websocket: true }, (connection) => {
-    const socket = connection.socket
+      socket.on("orderUpdate", ({ orderId, status }) => {
+        io.to(orderId).emit("orderUpdate", {
+          orderId,
+          status,
+        });
+      });
 
-    console.log('A user Connected ✅')
+      socket.on("disconnect", () => {
+        console.log("User disconnected ❌", socket.id);
+      });
+    });
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
+};
 
-    socket.on('message', (data) => {
-      try {
-        const payload = JSON.parse(data.toString())
-
-        if (payload.event === 'joinRoom') {
-          joinRoom(payload.orderId, socket)
-          console.log(`🔴 User joined room ${payload.orderId}`)
-        }
-      } catch (err) {
-        console.error('Invalid WebSocket message')
-      }
-    })
-
-    socket.on('close', () => {
-      leaveAllRooms(socket)
-      console.log('User Disconnected ❌')
-    })
-  })
-
-  await app.listen({ port: PORT, host: '0.0.0.0' })
-
-  console.log(
-    `Shifa Store running on http://localhost:${PORT}${admin.options.rootPath}`
-  )
-}
-
-start()
+start();
