@@ -5,7 +5,7 @@ import * as Models from "../models/index.js";
 import { authenticate, COOKIE_PASSWORD, sessionStore } from "./config.js";
 import { dark, light, noSidebar } from "@adminjs/themes";
 
-AdminJS.registerAdapter(AdminJSMongoose)
+AdminJS.registerAdapter(AdminJSMongoose);
 
 // export const admin = new AdminJS({
 //     resources:[
@@ -57,7 +57,7 @@ export const admin = new AdminJS({
     {
       resource: Models.DeliveryPartner,
       options: {
-        listProperties: ["email","phone", "role", "isActivated"],
+        listProperties: ["email", "phone", "role", "isActivated"],
         filterProperties: ["email", "role"],
       },
     },
@@ -73,7 +73,7 @@ export const admin = new AdminJS({
     {
       resource: Models.ShopOwner,
       options: {
-        listProperties: ["name", "email","phone", "role", "isActivated"],
+        listProperties: ["name", "email", "phone", "role", "isActivated"],
         filterProperties: ["name", "email", "role"],
       },
     },
@@ -107,24 +107,45 @@ export const admin = new AdminJS({
   rootPath: "/admin",
 });
 
+// export const buildAdminRouter = async(app)=>{
+//     await AdminJSFastify.buildAuthenticatedRouter(
+//         admin,
+//         {
+//             authenticate,
+//             cookiePassword:COOKIE_PASSWORD,
+//             cookieName:'adminjs'
+//         },
+//         app,
+//         {
+//             store:sessionStore,
+//             saveUnintialized: true,
+//             secret: COOKIE_PASSWORD,
+//             cookie: {
+//               httpOnly: process.env.NODE_ENV === "production",
+//               secure: process.env.NODE_ENV === "production",
+//             },
+//         }
+//     )
+// }
 
-export const buildAdminRouter = async(app)=>{
-    await AdminJSFastify.buildAuthenticatedRouter(
-        admin,
-        {
-            authenticate,
-            cookiePassword:COOKIE_PASSWORD,
-            cookieName:'adminjs'
-        },
-        app,
-        {
-            store:sessionStore,
-            saveUnintialized: true,
-            secret: COOKIE_PASSWORD,
-            cookie: {
-              httpOnly: process.env.NODE_ENV === "production",
-              secure: process.env.NODE_ENV === "production",
-            },
-        }
-    )
-}
+export const buildAdminRouter = async (app) => {
+  await AdminJSFastify.buildAuthenticatedRouter(
+    admin,
+    {
+      authenticate,
+      cookieName: "adminjs",
+      cookiePassword: COOKIE_PASSWORD,
+    },
+    app,
+    {
+      store: sessionStore,
+      saveUninitialized: true, // ✅ FIXED SPELLING
+      resave: false,
+      secret: COOKIE_PASSWORD,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+      },
+    }
+  );
+};
