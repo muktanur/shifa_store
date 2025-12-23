@@ -105,82 +105,62 @@
 
 // start();
 
-import "dotenv/config";
-import Fastify from "fastify";
-import { Server } from "socket.io";
+import Fastify from "fastify"
+import cookie from "@fastify/cookie"
+import session from "@fastify/session"
+import { Server } from "socket.io"
 
-import { connectDB } from "./src/config/connect.js";
-import { registerRoutes } from "./src/routes/index.js";
-import { admin, buildAdminRouter } from "./src/config/setup.js";
+import { connectDB } from "./src/config/connect.js"
+import { registerRoutes } from "./src/routes/index.js"
+import { admin, buildAdminRouter } from "./src/config/setup.js"
 
-const app = Fastify({ logger: true });
+const app = Fastify({ logger: true })
 
-// ------------------ BASIC ROUTE ------------------
-app.get("/", async () => {
-  return { status: "Fastify 5 + Socket.IO running 🚀" };
-});
+// 🔐 COOKIE (REQUIRED)
+await app.register(cookie)
 
-// ------------------ START SERVER ------------------
+// 🔐 SESSION (REQUIRED FOR ADMIN LOGIN)
+await app.register(session, {
+  secret: process.env.COOKIE_PASSWORD, // MUST be >= 32 chars
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+  },
+  saveUninitialized: false,
+})
+
+// BASIC ROUTE
+app.get("/", async () => ({
+  status: "Fastify 5 + Socket.IO running 🚀",
+}))
+
 const start = async () => {
   try {
-    // 1️⃣ CONNECT DATABASE
-    await connectDB(process.env.MONGO_URI);
+    await connectDB(process.env.MONGO_URI)
 
-    // 2️⃣ REGISTER API ROUTES  ✅ IMPORTANT
-    await registerRoutes(app);
+    // REGISTER ROUTES
+    await registerRoutes(app)
 
-    // 3️⃣ REGISTER ADMINJS     ✅ IMPORTANT
-    await buildAdminRouter(app);
+    // 🔑 REGISTER ADMINJS AFTER SESSION
+    await buildAdminRouter(app)
 
-    // 4️⃣ START FASTIFY SERVER
+    // START SERVER
     await app.listen({
       port: process.env.PORT || 3000,
       host: "0.0.0.0",
-    });
+    })
 
-    // 5️⃣ ATTACH SOCKET.IO
+    // SOCKET.IO
     const io = new Server(app.server, {
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-      },
-    });
+      cors: { origin: "*" },
+    })
 
-    console.log("Socket.IO attached successfully ✅");
-    console.log(
-      `AdminJS running at ${admin.options.rootPath}`
-    );
-
-    // ------------------ SOCKET EVENTS ------------------
-    io.on("connection", (socket) => {
-      console.log("User connected ✅", socket.id);
-
-      socket.on("joinRoom", (orderId) => {
-        socket.join(orderId);
-        console.log(`🔴 User joined room ${orderId}`);
-      });
-
-      socket.on("orderUpdate", ({ orderId, status }) => {
-        io.to(orderId).emit("orderUpdate", {
-          orderId,
-          status,
-        });
-      });
-
-      socket.on("disconnect", () => {
-        console.log("User disconnected ❌", socket.id);
-      });
-    });
-
-    // 🔍 DEBUG (optional – remove later)
-    app.ready().then(() => {
-      console.log(app.printRoutes());
-    });
-
+    console.log("Socket.IO attached ✅")
   } catch (err) {
-    app.log.error(err);
-    process.exit(1);
+    app.log.error(err)
+    process.exit(1)
   }
-};
+}
 
-start();
+start()
+
